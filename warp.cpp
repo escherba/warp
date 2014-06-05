@@ -61,6 +61,8 @@ void wrap_cylinder(cv::Mat& out, cv::Mat& in) {
     float r = (float)width * 0.50f;
     float yf = (float)height * 0.75f;
 
+    cv::Mat counter = cv::Mat::zeros(out.rows, out.cols, CV_8UC1);
+
     for (int i = 0; i < width; i++)
     {   // X-axis (columns)
         float zb = r * (cos((half_width - (float)i) / r) - cos(half_width / r));
@@ -68,25 +70,28 @@ void wrap_cylinder(cv::Mat& out, cv::Mat& in) {
         {   // Y-axis (rows)
             int i_new = (int)round((xf + zf * (r * sin(((float)i - half_width) / r))/(zf + zb)));
             int j_new = (int)round((yf + zf * ((float)j - yf)/(zf + zb)));
+
             float new_val = (float)in.at<float>(j, i);
-            float old_val = (float)out.at<float>(j_new, i_new);
-            if (old_val > 0.0f) {
-                new_val = (new_val + old_val) * 0.50f;
+            int count = (int)counter.at<unsigned char>(j_new, i_new);
+            if (count > 0) {
+                // calculate weighted value
+                float old_val = (float)out.at<float>(j_new, i_new);
+                new_val = (new_val + (float)count * old_val) / (1.0f + (float)count);
             }
             out.at<float>(j_new, i_new) = new_val;
+            counter.at<unsigned char>(j_new, i_new) = (unsigned char)(count + 1);
         }
     }
 }
 
 int main() {
-    cv::Mat in = cv::imread("Lenna_grid.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+    cv::Mat in = cv::imread("Lenna_grid.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     in.convertTo(in, CV_32FC1);
-    cv::Mat out = cv::Mat(in.rows, in.cols, in.type());
+    cv::Mat out = cv::Mat::zeros(in.rows, in.cols, in.type());
 
     wrap_cylinder(out, in);
 
-    normalize(out, out,0,255,cv::NORM_MINMAX,CV_8UC1);
-
+    normalize(out, out, 0, 255, cv::NORM_MINMAX, CV_8UC1);
     cv::imshow("output", out);
     cv::waitKey(0);
 }
