@@ -77,14 +77,14 @@ void wrap_cylinder(cv::Mat& out, cv::Mat& in) {
             int count = (int)counter.at<unsigned char>(j_new, i_new);
             cv::Vec3b new_val = in.at<cv::Vec3b>(j, i);
             cv::Vec3b old_val = out.at<cv::Vec3b>(j, i);
-            for (int k = 0; k < channels; k++)
-            {
-                // for each channel
-                if (count > 0) {
-                    // calculate weighted value
-                    new_val.val[k] = (unsigned char)((float)new_val.val[k] + (float)count * (float)old_val.val[k]) / (1.0f + (float)count);
-                }
-            }
+            //for (int k = 0; k < channels; k++)
+            //{
+            //    // for each channel
+            //    if (count > 0) {
+            //        // calculate weighted value
+            //        new_val.val[k] = (unsigned char)((float)new_val.val[k] + (float)count * (float)old_val.val[k]) / (1.0f + (float)count);
+            //    }
+            //}
             out.at<cv::Vec3b>(j_new, i_new) = new_val;
             counter.at<unsigned char>(j_new, i_new) = (unsigned char)(count + 1);
         }
