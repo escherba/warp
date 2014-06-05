@@ -61,37 +61,44 @@ void wrap_cylinder(cv::Mat& out, cv::Mat& in) {
     float r = (float)width * 0.50f;
     float yf = (float)height * 0.75f;
 
+    int channels = out.channels();
+
     cv::Mat counter = cv::Mat::zeros(out.rows, out.cols, CV_8UC1);
 
     for (int i = 0; i < width; i++)
-    {   // X-axis (columns)
-        float zb = r * (cos((half_width - (float)i) / r) - cos(half_width / r));
+    {
+        // X-axis (columns)
+        float zf_ratio = zf / (zf + r * (cos((half_width - (float)i) / r) - cos(half_width / r)));
+        int i_new = (int)round(xf + zf_ratio * (r * sin(((float)i - half_width) / r)));
         for (int j = 0; j < height; j++)
-        {   // Y-axis (rows)
-            int i_new = (int)round((xf + zf * (r * sin(((float)i - half_width) / r))/(zf + zb)));
-            int j_new = (int)round((yf + zf * ((float)j - yf)/(zf + zb)));
-
-            float new_val = (float)in.at<float>(j, i);
+        {
+            // Y-axis (rows)
+            int j_new = (int)round(yf + zf_ratio * ((float)j - yf));
             int count = (int)counter.at<unsigned char>(j_new, i_new);
-            if (count > 0) {
-                // calculate weighted value
-                float old_val = (float)out.at<float>(j_new, i_new);
-                new_val = (new_val + (float)count * old_val) / (1.0f + (float)count);
+            cv::Vec3b new_val = in.at<cv::Vec3b>(j, i);
+            cv::Vec3b old_val = out.at<cv::Vec3b>(j, i);
+            for (int k = 0; k < channels; k++)
+            {
+                // for each channel
+                if (count > 0) {
+                    // calculate weighted value
+                    new_val.val[k] = (unsigned char)((float)new_val.val[k] + (float)count * (float)old_val.val[k]) / (1.0f + (float)count);
+                }
             }
-            out.at<float>(j_new, i_new) = new_val;
+            out.at<cv::Vec3b>(j_new, i_new) = new_val;
             counter.at<unsigned char>(j_new, i_new) = (unsigned char)(count + 1);
         }
     }
 }
 
 int main() {
-    cv::Mat in = cv::imread("Lenna_grid.jpg", CV_LOAD_IMAGE_GRAYSCALE);
-    in.convertTo(in, CV_32FC1);
+    cv::Mat in = cv::imread("Lenna_grid.jpg", CV_LOAD_IMAGE_COLOR);
+    in.convertTo(in, CV_8UC3);
     cv::Mat out = cv::Mat::zeros(in.rows, in.cols, in.type());
 
     wrap_cylinder(out, in);
 
-    normalize(out, out, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+    //normalize(out, out, 0, 255, cv::NORM_MINMAX, CV_8UC3);
     cv::imshow("output", out);
     cv::waitKey(0);
 }
