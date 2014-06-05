@@ -66,7 +66,7 @@ void wrap_cylinder(cv::Mat& out, cv::Mat& in) {
         float zb = r * (cos((half_width - (float)i) / r) - cos(half_width / r));
         for (int j = 0; j < height; j++)
         {   // Y-axis (rows)
-            int i_new = (int)round((xf + zf * (r * sin((half_width - (float)i) / r))/(zf + zb)));
+            int i_new = (int)round((xf + zf * (r * sin(((float)i - half_width) / r))/(zf + zb)));
             int j_new = (int)round((yf + zf * ((float)j - yf)/(zf + zb)));
             float new_val = (float)in.at<float>(j, i);
             float old_val = (float)out.at<float>(j_new, i_new);
