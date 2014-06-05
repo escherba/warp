@@ -84,6 +84,37 @@ void wrap_cylinder(cv::Mat& out, cv::Mat& in) {
     }
 }
 
+void wrap_cylinder_color(cv::Mat& out, cv::Mat& in) {
+    int height = in.rows;
+    int width = in.cols;
+
+    float jf = (float)height * 0.75f; // distance from camera to ceiling
+    float zf = (float)height * 2.0f;  // distance to camera to projection plane
+
+    float half_width = (float)width * 0.50f;
+    float xf = half_width;
+    float r = (float)width * 0.50f;
+    float yf = (float)height * 0.75f;
+
+    int channels = out.channels();
+
+    for (int i = 0; i < width; i++)
+    {
+        // X-axis (columns)
+        float zf_ratio = zf / (zf + r * (cos((half_width - (float)i) / r) - cos(half_width / r)));
+        int i_new = (int)round(xf + zf_ratio * (r * sin(((float)i - half_width) / r)));
+        for (int j = 0; j < height; j++)
+        {
+            // Y-axis (rows)
+            int j_new = (int)round(yf + zf_ratio * ((float)j - yf));
+            cv::Vec3b new_val = in.at<cv::Vec3b>(j, i);
+            cv::Vec3b old_val = out.at<cv::Vec3b>(j, i);
+            out.at<cv::Vec3b>(j_new, i_new) = new_val;
+        }
+    }
+}
+
+
 int main() {
     cv::Mat in = cv::imread("Lenna_grid.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     in.convertTo(in, CV_32FC1);
