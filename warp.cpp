@@ -76,13 +76,12 @@ void wrap_cylinder(cv::Mat& dst, cv::Mat& src) {
     int height = src.rows;
     int width = src.cols;
 
-    float jf = (float)height * 0.75f; // distance from camera to ceiling
     float zf = (float)height * 2.0f;  // distance to camera to projection plane
 
     float half_width = (float)width * 0.50f;
     float xf = half_width;
     float r = (float)width * 0.50f;
-    float yf = (float)height * 0.75f;
+    float yf = (float)height * 0.75f; // distance from camera to ceiling
 
     int channels = dst.channels();
 
