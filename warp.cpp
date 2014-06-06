@@ -21,7 +21,7 @@
 
 using namespace cv;
 
-cv::Vec4b getSubpix(const cv::Mat& src, cv::Point2f pt)
+cv::Vec3b getSubpix(const cv::Mat& src, cv::Point2f pt)
 {
     // Simple bilinear interpolation
     //
@@ -37,22 +37,26 @@ cv::Vec4b getSubpix(const cv::Mat& src, cv::Point2f pt)
     const float c = pt.y - (float)y;
 
     const uchar b = (uchar)cvRound(
-        (src.at<cv::Vec4b>(y0, x0)[0] * (1.f - a) + src.at<cv::Vec4b>(y0, x1)[0] * a) * (1.f - c) +
-        (src.at<cv::Vec4b>(y1, x0)[0] * (1.f - a) + src.at<cv::Vec4b>(y1, x1)[0] * a) * c
+        (src.at<cv::Vec3b>(y0, x0)[0] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[0] * a) * (1.f - c) +
+        (src.at<cv::Vec3b>(y1, x0)[0] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[0] * a) * c
     );
     const uchar g = (uchar)cvRound(
-        (src.at<cv::Vec4b>(y0, x0)[1] * (1.f - a) + src.at<cv::Vec4b>(y0, x1)[1] * a) * (1.f - c) +
-        (src.at<cv::Vec4b>(y1, x0)[1] * (1.f - a) + src.at<cv::Vec4b>(y1, x1)[1] * a) * c
+        (src.at<cv::Vec3b>(y0, x0)[1] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[1] * a) * (1.f - c) +
+        (src.at<cv::Vec3b>(y1, x0)[1] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[1] * a) * c
     );
     const uchar r = (uchar)cvRound(
-        (src.at<cv::Vec4b>(y0, x0)[2] * (1.f - a) + src.at<cv::Vec4b>(y0, x1)[2] * a) * (1.f - c) +
-        (src.at<cv::Vec4b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec4b>(y1, x1)[2] * a) * c
+        (src.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c) +
+        (src.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[2] * a) * c
     );
+
+    /*
     const uchar t = (uchar)cvRound(
-        (src.at<cv::Vec4b>(y0, x0)[2] * (1.f - a) + src.at<cv::Vec4b>(y0, x1)[2] * a) * (1.f - c) +
-        (src.at<cv::Vec4b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec4b>(y1, x1)[2] * a) * c
+        (src.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c) +
+        (src.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[2] * a) * c
     );
-    return cv::Vec4b(b, g, r, t);
+    return cv::Vec3b(b, g, r, t);
+    */
+    return cv::Vec3b(b, g, r);
 }
 
 void project_identity(cv::Mat& dst, cv::Mat& src)
@@ -66,7 +70,7 @@ void project_identity(cv::Mat& dst, cv::Mat& src)
         const int j_src = j;
         for (int i = 0; i < width; i++) {
             const int i_src = i;
-            dst.at<cv::Vec4b>(j, i) = src.at<cv::Vec4b>(j_src, i_src);
+            dst.at<cv::Vec3b>(j, i) = src.at<cv::Vec3b>(j_src, i_src);
         }
     }
 }
@@ -89,7 +93,7 @@ void project_flat(cv::Mat& dst, cv::Mat& src)
             const int i_src = i;
             if (i_src >= 0.0f && i_src <= (float)width &&
                 j_src >= 0.0f && j_src <= (float)height) {
-                dst.at<cv::Vec4b>(j, i) = getSubpix(src, cv::Point2f(i_src, j_src));
+                dst.at<cv::Vec3b>(j, i) = getSubpix(src, cv::Point2f(i_src, j_src));
             }
         }
     }
@@ -127,7 +131,7 @@ void project_cylinder(cv::Mat& dst, cv::Mat& src)
             if (i_src >= 0.0f && i_src <= (float)width &&
                 j_src >= 0.0f && j_src <= (float)height)
             {
-                dst.at<cv::Vec4b>(j, i) = getSubpix(src, cv::Point2f(i_src, j_src));
+                dst.at<cv::Vec3b>(j, i) = getSubpix(src, cv::Point2f(i_src, j_src));
             }
         }
     }
@@ -135,7 +139,7 @@ void project_cylinder(cv::Mat& dst, cv::Mat& src)
 
 int main(int argc, char *argv[]) {
     cv::Mat src = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
-    src.convertTo(src, CV_8UC4); // convert to BGR
+    src.convertTo(src, CV_8UC3); // convert to BGR
 
     // fix jaggies on the bottom by adding a 2-px black border
     cv::copyMakeBorder(src, src, 2, 2, 0, 0, cv::BORDER_CONSTANT, cv::Scalar::all(0));
@@ -145,6 +149,5 @@ int main(int argc, char *argv[]) {
 
     project_cylinder(dst, src);
     cv::imwrite(argv[2], dst);
-
 }
 
