@@ -48,6 +48,14 @@ cv::Vec3b getSubpix(const cv::Mat& src, cv::Point2f pt)
         (src.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c) +
         (src.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[2] * a) * c
     );
+
+    /*
+    const uchar t = (uchar)cvRound(
+        (src.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c) +
+        (src.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[2] * a) * c
+    );
+    return cv::Vec3b(b, g, r, t);
+    */
     return cv::Vec3b(b, g, r);
 }
 
@@ -131,7 +139,7 @@ void project_cylinder(cv::Mat& dst, cv::Mat& src)
 
 int main(int argc, char *argv[]) {
     cv::Mat src = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
-    src.convertTo(src, CV_8UC4); // convert to BGR
+    src.convertTo(src, CV_8UC3); // convert to BGR
 
     // fix jaggies on the bottom by adding a 2-px black border
     cv::copyMakeBorder(src, src, 2, 2, 0, 0, cv::BORDER_CONSTANT, cv::Scalar::all(0));
@@ -141,6 +149,5 @@ int main(int argc, char *argv[]) {
 
     project_cylinder(dst, src);
     cv::imwrite(argv[2], dst);
-
 }
 
