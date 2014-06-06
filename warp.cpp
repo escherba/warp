@@ -20,27 +20,27 @@
 #include <opencv2/opencv.hpp>
 
 
-cv::Vec3b getSubpix(const cv::Mat& img, cv::Point2f pt)
+cv::Vec3b getSubpix(const cv::Mat& src, cv::Point2f pt)
 {
     // Simple bilinear interpolation
     //
     const int x = (int)pt.x;
     const int y = (int)pt.y;
 
-    const int x0 = cv::borderInterpolate(x,     img.cols, cv::BORDER_REFLECT_101);
-    const int x1 = cv::borderInterpolate(x + 1, img.cols, cv::BORDER_REFLECT_101);
-    const int y0 = cv::borderInterpolate(y,     img.rows, cv::BORDER_REFLECT_101);
-    const int y1 = cv::borderInterpolate(y + 1, img.rows, cv::BORDER_REFLECT_101);
+    const int x0 = cv::borderInterpolate(x,     src.cols, cv::BORDER_REFLECT_101);
+    const int x1 = cv::borderInterpolate(x + 1, src.cols, cv::BORDER_REFLECT_101);
+    const int y0 = cv::borderInterpolate(y,     src.rows, cv::BORDER_REFLECT_101);
+    const int y1 = cv::borderInterpolate(y + 1, src.rows, cv::BORDER_REFLECT_101);
 
     const float a = pt.x - (float)x;
     const float c = pt.y - (float)y;
 
-    const uchar b = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[0] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[0] * a) * (1.f - c)
-            + (img.at<cv::Vec3b>(y1, x0)[0] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[0] * a) * c);
-    const uchar g = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[1] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[1] * a) * (1.f - c)
-            + (img.at<cv::Vec3b>(y1, x0)[1] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[1] * a) * c);
-    const uchar r = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c)
-            + (img.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[2] * a) * c);
+    const uchar b = (uchar)cvRound((src.at<cv::Vec3b>(y0, x0)[0] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[0] * a) * (1.f - c)
+            + (src.at<cv::Vec3b>(y1, x0)[0] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[0] * a) * c);
+    const uchar g = (uchar)cvRound((src.at<cv::Vec3b>(y0, x0)[1] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[1] * a) * (1.f - c)
+            + (src.at<cv::Vec3b>(y1, x0)[1] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[1] * a) * c);
+    const uchar r = (uchar)cvRound((src.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c)
+            + (src.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[2] * a) * c);
 
     return cv::Vec3b(b, g, r);
 }
@@ -49,8 +49,8 @@ void project_identity(cv::Mat& dst, cv::Mat& src)
 {
     // Identity projection (no change)
     //
-    const int height = src.rows;
-    const int width = src.cols;
+    const int height = dst.rows;
+    const int width  = dst.cols;
 
     for (int j = 0; j < height; j++) {
         const int j_src = j;
@@ -65,12 +65,12 @@ void project_flat(cv::Mat& dst, cv::Mat& src)
 {
     // Project from a flat background onto a flat screen
     //
-    const int height = src.rows;
-    const int width = src.cols;
+    const int height = dst.rows;
+    const int width  = dst.cols;
 
     const float jf = (float)height * 0.75f; // distance from camera to ceiling
-    const float zf = (float)height * 2.0f;  // distance to camera to projection plane
-    const float zb = (float)height * 0.5f;  // distance between projection and back planes
+    const float zf = (float)height * 2.0f;  // distance from camera to screen
+    const float zb = (float)height * 0.5f;  // distance from screen to image
 
     for (int j = 0; j < height; j++) {
         const float z_ratio = (zb + zf) / zf;
@@ -89,12 +89,13 @@ void project_cylinder(cv::Mat& dst, cv::Mat& src)
 {
     // Project from a cylindrical background onto a flat screen
     //
-    const int height = src.rows;
-    const int width = src.cols;
+    const int height = dst.rows;
+    const int width  = dst.cols;
 
-    const float r  = (float)width * 0.50f;   // cylinder radius
+    const float r  = (float)width * 0.5f;    // cylinder radius ((width / 2) <= r < inf)
     const float yf = (float)height * 0.75f;  // distance from camera to ceiling
-    const float zf = (float)height * 2.0f;   // distance from camera to screen
+    const float zf = hypot((float)height, (float)width);
+                                             // distance from camera to screen (default: hypothenuse)
     const float xf = (float)width * 0.50f;   // distance from camera to left edge
 
     // precompute some constants
