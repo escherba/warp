@@ -121,7 +121,6 @@ void project_cylinder(cv::Mat& dst, cv::Mat& src)
         const float z_ratio = (zb + zf) / zf;
 
         const float i_src = r * asin(x_scale * ((float)i - xf) * z_ratio / r) + half_width;
-        //const float i_src = xf + z_ratio * r * sin(((float)i - half_width) / r);
         for (int j = 0; j < height; j++)
         {
             // Y-axis (rows)
@@ -166,7 +165,6 @@ cv::Mat* project_cylinder2(cv::Mat& src)
         const float z_ratio = (zb + zf) / zf;
 
         const float i_src = r * asin(x_scale * ((float)i - xf) * z_ratio / r) + half_width;
-        //const float i_src = xf + z_ratio * r * sin(((float)i - half_width) / r);
         for (int j = 0; j < adj_height; j++)
         {
             // Y-axis (rows)
