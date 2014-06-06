@@ -112,7 +112,9 @@ void project_cylinder(cv::Mat& dst, cv::Mat& src)
         // X-axis (columns)
         const float zb = r * (cos((half_width - (float)i) / r) - zfr);
         const float z_ratio = (zb + zf) / zf;
-        const float i_src = xf + z_ratio * r * sin(((float)i - half_width) / r);
+
+        const float i_src = r * asin(((float)i - xf) * z_ratio / r) + half_width;
+        //const float i_src = xf + z_ratio * r * sin(((float)i - half_width) / r);
         for (int j = 0; j < height; j++)
         {
             // Y-axis (rows)
@@ -131,7 +133,7 @@ int main() {
     src.convertTo(src, CV_8UC3); // convert to BGR
 
     // fix jaggies on the bottom by adding a 2-px black border
-    cv::copyMakeBorder(src, src, 0, 2, 0, 0, cv::BORDER_CONSTANT, cv::Scalar::all(0));
+    cv::copyMakeBorder(src, src, 2, 2, 0, 0, cv::BORDER_CONSTANT, cv::Scalar::all(0));
 
     // prepare black destination canvas
     cv::Mat dst = cv::Mat::zeros(src.rows, src.cols, src.type());
