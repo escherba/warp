@@ -19,6 +19,7 @@
 #include <cmath>
 #include <opencv2/opencv.hpp>
 
+using namespace cv;
 
 cv::Vec4b getSubpix(const cv::Mat& src, cv::Point2f pt)
 {
@@ -132,9 +133,9 @@ void project_cylinder(cv::Mat& dst, cv::Mat& src)
     }
 }
 
-int main() {
-    cv::Mat src = cv::imread("Lenna_grid.jpg", CV_LOAD_IMAGE_COLOR);
-    src.convertTo(src, CV_8UC4); // convert to BGRA
+int main(int argc, char *argv[]) {
+    cv::Mat src = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
+    src.convertTo(src, CV_8UC4); // convert to BGR
 
     // fix jaggies on the bottom by adding a 2-px black border
     cv::copyMakeBorder(src, src, 2, 2, 0, 0, cv::BORDER_CONSTANT, cv::Scalar::all(0));
@@ -143,7 +144,7 @@ int main() {
     cv::Mat dst = cv::Mat::zeros(src.rows, src.cols, src.type());
 
     project_cylinder(dst, src);
+    cv::imwrite(argv[2], dst);
 
-    cv::imshow("output", dst);
-    cv::waitKey(0);
 }
+
