@@ -35,13 +35,18 @@ cv::Vec3b getSubpix(const cv::Mat& src, cv::Point2f pt)
     const float a = pt.x - (float)x;
     const float c = pt.y - (float)y;
 
-    const uchar b = (uchar)cvRound((src.at<cv::Vec3b>(y0, x0)[0] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[0] * a) * (1.f - c)
-            + (src.at<cv::Vec3b>(y1, x0)[0] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[0] * a) * c);
-    const uchar g = (uchar)cvRound((src.at<cv::Vec3b>(y0, x0)[1] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[1] * a) * (1.f - c)
-            + (src.at<cv::Vec3b>(y1, x0)[1] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[1] * a) * c);
-    const uchar r = (uchar)cvRound((src.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c)
-            + (src.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[2] * a) * c);
-
+    const uchar b = (uchar)cvRound(
+        (src.at<cv::Vec3b>(y0, x0)[0] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[0] * a) * (1.f - c) +
+        (src.at<cv::Vec3b>(y1, x0)[0] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[0] * a) * c
+    );
+    const uchar g = (uchar)cvRound(
+        (src.at<cv::Vec3b>(y0, x0)[1] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[1] * a) * (1.f - c) +
+        (src.at<cv::Vec3b>(y1, x0)[1] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[1] * a) * c
+    );
+    const uchar r = (uchar)cvRound(
+        (src.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c) +
+        (src.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec3b>(y1, x1)[2] * a) * c
+    );
     return cv::Vec3b(b, g, r);
 }
 
@@ -123,7 +128,12 @@ void project_cylinder(cv::Mat& dst, cv::Mat& src)
 
 int main() {
     cv::Mat src = cv::imread("Lenna_grid.jpg", CV_LOAD_IMAGE_COLOR);
-    src.convertTo(src, CV_8UC3);
+    src.convertTo(src, CV_8UC3); // convert to BGR
+
+    // fix jaggies on the bottom by adding a 2-px black border
+    cv::copyMakeBorder(src, src, 0, 2, 0, 0, cv::BORDER_CONSTANT, cv::Scalar::all(0));
+
+    // prepare black destination canvas
     cv::Mat dst = cv::Mat::zeros(src.rows, src.cols, src.type());
 
     project_cylinder(dst, src);
