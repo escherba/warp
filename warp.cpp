@@ -146,6 +146,5 @@ int main(int argc, char *argv[]) {
 
     project_cylinder(dst, src);
     cv::imwrite(argv[2], dst);
-
 }
 
