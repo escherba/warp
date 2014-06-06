@@ -49,8 +49,8 @@ cv::Vec4b getSubpix(const cv::Mat& src, cv::Point2f pt)
         (src.at<cv::Vec4b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec4b>(y1, x1)[2] * a) * c
     );
     const uchar t = (uchar)cvRound(
-        (src.at<cv::Vec4b>(y0, x0)[2] * (1.f - a) + src.at<cv::Vec4b>(y0, x1)[2] * a) * (1.f - c) +
-        (src.at<cv::Vec4b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec4b>(y1, x1)[2] * a) * c
+        (src.at<cv::Vec4b>(y0, x0)[3] * (1.f - a) + src.at<cv::Vec4b>(y0, x1)[3] * a) * (1.f - c) +
+        (src.at<cv::Vec4b>(y1, x0)[3] * (1.f - a) + src.at<cv::Vec4b>(y1, x1)[3] * a) * c
     );
     return cv::Vec4b(b, g, r, t);
 }
@@ -134,14 +134,15 @@ void project_cylinder(cv::Mat& dst, cv::Mat& src)
 }
 
 int main(int argc, char *argv[]) {
-    cv::Mat src = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
-    src.convertTo(src, CV_8UC4); // convert to BGR
+    cv::Mat src = cv::imread(argv[1], CV_LOAD_IMAGE_UNCHANGED);
+    cv::cvtColor(src, src, CV_RGB2RGBA);
+    src.convertTo(src, CV_8UC4); // convert to 8-bit BGRA
 
     // fix jaggies on the bottom by adding a 2-px black border
-    cv::copyMakeBorder(src, src, 2, 2, 0, 0, cv::BORDER_CONSTANT, cv::Scalar::all(0));
+    cv::copyMakeBorder(src, src, 2, 2, 0, 0, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0, 0));
 
     // prepare black destination canvas
-    cv::Mat dst = cv::Mat::zeros(src.rows, src.cols, src.type());
+    cv::Mat dst = cv::Mat::zeros(src.rows, src.cols, CV_8UC4);
 
     project_cylinder(dst, src);
     cv::imwrite(argv[2], dst);
