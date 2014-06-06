@@ -3,9 +3,9 @@
  *
  *       Filename:  warp.cpp
  *
- *    Description:
+ *    Description:  Demonstrate various projection of an image onto a flat screen
  *
- *        Version:  1.0
+ *        Version:  0.0.1
  *        Created:  06/03/2014 13:38:27
  *       Revision:  none
  *       Compiler:  gcc
