@@ -156,7 +156,6 @@ cv::Mat* project_cylinder2(cv::Mat& src)
 
     const int adj_height = (int)ceil((float)height / x_scale);
 
-    std::cout << "before height: " << height << ", after height: " << adj_height << std::endl;
     cv::Mat *dst = new cv::Mat(cv::Mat::zeros(adj_height, width, src.type()));
 
     for (int i = 0; i < width; i++)
@@ -192,5 +191,6 @@ int main(int argc, char *argv[]) {
 
     cv::Mat *dst = project_cylinder2(src);
     cv::imwrite(argv[2], *dst);
+    delete dst;
 }
 
