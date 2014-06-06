@@ -7,8 +7,8 @@ Cylindrical projection example:
 
 Before:
 
-![Original](screenshots/before.png?raw=true "Original image")
+![Original](images/Lenna_grid.jpg?raw=true "Original image")
 
 After:
 
-![After](screenshots/after.png?raw=true "Projected image")
+![After](images/Lenna_grid_warped.png?raw=true "Projected image")
