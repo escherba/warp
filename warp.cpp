@@ -19,9 +19,8 @@
 #include <cmath>
 #include <opencv2/opencv.hpp>
 
-using namespace cv;
-
-cv::Vec4b getSubpix(const cv::Mat& src, cv::Point2f pt)
+template<typename T, typename U>
+U get_subpixel(const cv::Mat& src, cv::Point2f pt)
 {
     // Simple bilinear interpolation
     //
@@ -36,25 +35,34 @@ cv::Vec4b getSubpix(const cv::Mat& src, cv::Point2f pt)
     const float a = pt.x - (float)x;
     const float c = pt.y - (float)y;
 
-    const uchar b = (uchar)cvRound(
-        (src.at<cv::Vec4b>(y0, x0)[0] * (1.f - a) + src.at<cv::Vec4b>(y0, x1)[0] * a) * (1.f - c) +
-        (src.at<cv::Vec4b>(y1, x0)[0] * (1.f - a) + src.at<cv::Vec4b>(y1, x1)[0] * a) * c
+    const float one_minus_a = 1.f - a;
+    const float one_minus_c = 1.f - c;
+
+    const U y0_x0 = src.at<U>(y0, x0);
+    const U y1_x0 = src.at<U>(y1, x0);
+    const U y0_x1 = src.at<U>(y0, x1);
+    const U y1_x1 = src.at<U>(y1, x1);
+
+    const T b = (T)cvRound(
+        (one_minus_a * (float)(y0_x0[0]) + a * (float)(y0_x1[0])) * one_minus_c +
+        (one_minus_a * (float)(y1_x0[0]) + a * (float)(y1_x1[0])) * c
     );
-    const uchar g = (uchar)cvRound(
-        (src.at<cv::Vec4b>(y0, x0)[1] * (1.f - a) + src.at<cv::Vec4b>(y0, x1)[1] * a) * (1.f - c) +
-        (src.at<cv::Vec4b>(y1, x0)[1] * (1.f - a) + src.at<cv::Vec4b>(y1, x1)[1] * a) * c
+    const T g = (T)cvRound(
+        (one_minus_a * (float)(y0_x0[1]) + a * (float)(y0_x1[1])) * one_minus_c +
+        (one_minus_a * (float)(y1_x0[1]) + a * (float)(y1_x1[1])) * c
     );
-    const uchar r = (uchar)cvRound(
-        (src.at<cv::Vec4b>(y0, x0)[2] * (1.f - a) + src.at<cv::Vec4b>(y0, x1)[2] * a) * (1.f - c) +
-        (src.at<cv::Vec4b>(y1, x0)[2] * (1.f - a) + src.at<cv::Vec4b>(y1, x1)[2] * a) * c
+    const T r = (T)cvRound(
+        (one_minus_a * (float)(y0_x0[2]) + a * (float)(y0_x1[2])) * one_minus_c +
+        (one_minus_a * (float)(y1_x0[2]) + a * (float)(y1_x1[2])) * c
     );
-    const uchar t = (uchar)cvRound(
-        (src.at<cv::Vec4b>(y0, x0)[3] * (1.f - a) + src.at<cv::Vec4b>(y0, x1)[3] * a) * (1.f - c) +
-        (src.at<cv::Vec4b>(y1, x0)[3] * (1.f - a) + src.at<cv::Vec4b>(y1, x1)[3] * a) * c
+    const T t = (T)cvRound(
+        (one_minus_a * (float)(y0_x0[3]) + a * (float)(y0_x1[3])) * one_minus_c +
+        (one_minus_a * (float)(y1_x0[3]) + a * (float)(y1_x1[3])) * c
     );
-    return cv::Vec4b(b, g, r, t);
+    return U(b, g, r, t);
 }
 
+template<typename U>
 void project_identity(cv::Mat& dst, cv::Mat& src)
 {
     // Identity projection (no change)
@@ -66,11 +74,12 @@ void project_identity(cv::Mat& dst, cv::Mat& src)
         const int j_src = j;
         for (int i = 0; i < width; i++) {
             const int i_src = i;
-            dst.at<cv::Vec4b>(j, i) = src.at<cv::Vec4b>(j_src, i_src);
+            dst.at<U>(j, i) = src.at<U>(j_src, i_src);
         }
     }
 }
 
+template<typename T, typename U>
 void project_flat(cv::Mat& dst, cv::Mat& src)
 {
     // Project from a flat background onto a flat screen
@@ -89,12 +98,13 @@ void project_flat(cv::Mat& dst, cv::Mat& src)
             const int i_src = i;
             if (i_src >= 0.0f && i_src <= (float)width &&
                 j_src >= 0.0f && j_src <= (float)height) {
-                dst.at<cv::Vec4b>(j, i) = getSubpix(src, cv::Point2f(i_src, j_src));
+                dst.at<U>(j, i) = get_subpixel<T, U>(src, cv::Point2f(i_src, j_src));
             }
         }
     }
 }
 
+template<typename T, typename U>
 void project_cylinder(cv::Mat& dst, cv::Mat& src)
 {
     // Project from a cylindrical background onto a flat screen
@@ -128,12 +138,13 @@ void project_cylinder(cv::Mat& dst, cv::Mat& src)
             if (i_src >= 0.0f && i_src <= (float)width &&
                 j_src >= 0.0f && j_src <= (float)height)
             {
-                dst.at<cv::Vec4b>(j, i) = getSubpix(src, cv::Point2f(i_src, j_src));
+                dst.at<U>(j, i) = get_subpixel<T, U>(src, cv::Point2f(i_src, j_src));
             }
         }
     }
 }
 
+template<typename T, typename U>
 cv::Mat* project_cylinder2(cv::Mat& src)
 {
     // Project from a cylindrical background onto a flat screen
@@ -144,7 +155,7 @@ cv::Mat* project_cylinder2(cv::Mat& src)
     const float r  = (float)width * 0.5f;    // cylinder radius ((width / 2) <= r < inf)
     const float zf = hypot((float)height, (float)width);
                                              // distance from camera to screen (default: hypothenuse)
-    const float xf = (float)width * 0.5f;     // distance from camera to left edge
+    const float xf = (float)width * 0.5f;    // distance from camera to left edge
     const float yf = (float)height * 0.75f;  // distance from camera to ceiling
 
     // precompute some constants
@@ -152,7 +163,6 @@ cv::Mat* project_cylinder2(cv::Mat& src)
     const float zfr = cos(half_width / r); // distance from cylinder center to projection plane
     const float xfr = sin(half_width / r);
     const float x_scale = r * xfr / half_width;
-
     const int adj_height = (int)ceil((float)height / x_scale);
 
     cv::Mat *dst = new cv::Mat(cv::Mat::zeros(adj_height, width, src.type()));
@@ -172,7 +182,7 @@ cv::Mat* project_cylinder2(cv::Mat& src)
             if (i_src >= 0.0f && i_src <= (float)width &&
                 j_src >= 0.0f && j_src <= (float)height)
             {
-                dst->at<cv::Vec4b>(j, i) = getSubpix(src, cv::Point2f(i_src, j_src));
+                dst->at<U>(j, i) = get_subpixel<T, U>(src, cv::Point2f(i_src, j_src));
             }
         }
     }
@@ -181,13 +191,12 @@ cv::Mat* project_cylinder2(cv::Mat& src)
 
 int main(int argc, char *argv[]) {
     cv::Mat src = cv::imread(argv[1], CV_LOAD_IMAGE_UNCHANGED);
-    cv::cvtColor(src, src, CV_RGB2RGBA);
-    src.convertTo(src, CV_8UC4); // convert to 8-bit BGRA
+    src.convertTo(src, CV_16UC4); // failsafe (in case some other format is loaded)
 
     // fix jaggies on top and bottom by adding a 2-px border
     cv::copyMakeBorder(src, src, 2, 2, 0, 0, cv::BORDER_CONSTANT, cv::Scalar::all(0));
 
-    cv::Mat *dst = project_cylinder2(src);
+    cv::Mat *dst = project_cylinder2<int, cv::Vec4w>(src);
     cv::imwrite(argv[2], *dst);
     delete dst;
 }
