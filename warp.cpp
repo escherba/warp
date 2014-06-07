@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
     // fix jaggies on top and bottom by adding a 2-px border
     cv::copyMakeBorder(src, src, 2, 2, 0, 0, cv::BORDER_CONSTANT, cv::Scalar::all(0));
 
-    cv::Mat *dst = project_cylinder2<int, cv::Vec4w>(src);
+    cv::Mat *dst = project_cylinder2<ushort, cv::Vec4w>(src);
     cv::imwrite(argv[2], *dst);
     delete dst;
 }
