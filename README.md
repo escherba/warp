@@ -7,7 +7,7 @@ Cylindrical projection example:
 
 Before:
 
-![Original](images/output?raw=true "Original image")
+![Original](images/output.png?raw=true "Original image")
 
 After:
 
