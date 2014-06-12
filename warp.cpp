@@ -5,7 +5,7 @@
  *
  *    Description:  Demonstrate various projection of an image onto a flat screen
  *
- *        Version:  0.0.1
+ *        Version:  0.0.2
  *        Created:  06/03/2014 13:38:27
  *       Revision:  none
  *       Compiler:  gcc
@@ -20,7 +20,7 @@
 #include <opencv2/opencv.hpp>
 
 template<typename T, typename U>
-U get_subpixel(const cv::Mat& src, cv::Point2f pt)
+U get_subpixel4(const cv::Mat& src, cv::Point2f pt)
 {
     // Simple bilinear interpolation
     //
@@ -98,7 +98,7 @@ void project_flat(cv::Mat& dst, cv::Mat& src)
             const int i_src = i;
             if (i_src >= 0.0f && i_src <= (float)width &&
                 j_src >= 0.0f && j_src <= (float)height) {
-                dst.at<U>(j, i) = get_subpixel<T, U>(src, cv::Point2f(i_src, j_src));
+                dst.at<U>(j, i) = get_subpixel4<T, U>(src, cv::Point2f(i_src, j_src));
             }
         }
     }
@@ -108,6 +108,7 @@ template<typename T, typename U>
 void project_cylinder(cv::Mat& dst, cv::Mat& src)
 {
     // Project from a cylindrical background onto a flat screen
+    // Results in reduction of effective image size
     //
     const int height = dst.rows;
     const int width  = dst.cols;
@@ -138,16 +139,17 @@ void project_cylinder(cv::Mat& dst, cv::Mat& src)
             if (i_src >= 0.0f && i_src <= (float)width &&
                 j_src >= 0.0f && j_src <= (float)height)
             {
-                dst.at<U>(j, i) = get_subpixel<T, U>(src, cv::Point2f(i_src, j_src));
+                dst.at<U>(j, i) = get_subpixel4<T, U>(src, cv::Point2f(i_src, j_src));
             }
         }
     }
 }
 
 template<typename T, typename U>
-cv::Mat* project_cylinder2(cv::Mat& src)
+cv::Mat* project_cylinder_fixw(cv::Mat& src)
 {
     // Project from a cylindrical background onto a flat screen
+    // Keeps width of the stretched image same as the input image
     //
     const int height = src.rows;
     const int width  = src.cols;
@@ -182,7 +184,7 @@ cv::Mat* project_cylinder2(cv::Mat& src)
             if (i_src >= 0.0f && i_src <= (float)width &&
                 j_src >= 0.0f && j_src <= (float)height)
             {
-                dst->at<U>(j, i) = get_subpixel<T, U>(src, cv::Point2f(i_src, j_src));
+                dst->at<U>(j, i) = get_subpixel4<T, U>(src, cv::Point2f(i_src, j_src));
             }
         }
     }
@@ -191,12 +193,29 @@ cv::Mat* project_cylinder2(cv::Mat& src)
 
 int main(int argc, char *argv[]) {
     cv::Mat src = cv::imread(argv[1], CV_LOAD_IMAGE_UNCHANGED);
-    src.convertTo(src, CV_16UC4); // failsafe (in case some other format is loaded)
+
+    // Grab pointer to function of appropriate type
+    // see: http://docs.opencv.org/modules/core/doc/basic_structures.html#vec
+    cv::Mat* (*project)(cv::Mat&);
+    switch (src.type()) {
+
+        case CV_8UC4:  // 8-bit 4-channel images
+            project = project_cylinder_fixw<uchar, cv::Vec4b>;
+            break;
+
+        case CV_16UC4: // 16-bit 4-channel images
+            project = project_cylinder_fixw<ushort, cv::Vec4w>;
+            break;
+
+        default:       // all other image types
+            std::cerr << "Unexpected image type: " << src.type() << std::endl;
+            std::exit(1);
+    }
 
     // fix jaggies on top and bottom by adding a 2-px border
     cv::copyMakeBorder(src, src, 2, 2, 0, 0, cv::BORDER_CONSTANT, cv::Scalar::all(0));
 
-    cv::Mat *dst = project_cylinder2<ushort, cv::Vec4w>(src);
+    cv::Mat *dst = project(src);
     cv::imwrite(argv[2], *dst);
     delete dst;
 }
